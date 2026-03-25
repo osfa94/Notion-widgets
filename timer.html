@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Timer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+    .app { width: 440px; }
+
+    /* Tabs */
+    .tab-frame { display: flex; gap: 6px; margin-bottom: 10px; }
+    .tab-btn {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 14px;
+      font-size: 11pt;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+    }
+    .tab-btn.active { background: #313244; color: #89b4fa; }
+
+    /* Display */
+    .display {
+      background: #313244;
+      border-radius: 6px;
+      padding: 20px 30px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    #time-label {
+      font-family: 'Courier New', monospace;
+      font-size: 64px;
+      font-weight: bold;
+      color: #89b4fa;
+      line-height: 1;
+    }
+    #status-label {
+      font-size: 11pt;
+      color: #f9e2af;
+      min-height: 26px;
+      margin-top: 8px;
+    }
+
+    /* Input */
+    #input-frame { margin-bottom: 10px; }
+    #input-frame label { display: block; font-size: 10pt; margin-bottom: 4px; }
+    #duration-input {
+      width: 100%;
+      background: #313244;
+      color: #cdd6f4;
+      border: none;
+      padding: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    /* Buttons */
+    .btn-frame { display: flex; gap: 8px; }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      font-size: 11pt;
+      font-weight: bold;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+      color: #1e1e2e;
+    }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+    #start-btn { background: #a6e3a1; }
+    #pause-btn { background: #f9e2af; }
+    #reset-btn { background: #f38ba8; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="tab-frame">
+    <button class="tab-btn active" id="tab-countdown" onclick="setMode('countdown')">Countdown</button>
+    <button class="tab-btn"        id="tab-stopwatch" onclick="setMode('stopwatch')">Stoppuhr</button>
+  </div>
+
+  <div class="display">
+    <div id="time-label">00:00:00</div>
+    <div id="status-label"></div>
+  </div>
+
+  <div id="input-frame">
+    <label>Dauer (HH:MM:SS oder Sekunden):</label>
+    <input type="text" id="duration-input" value="00:05:00" />
+  </div>
+
+  <div class="btn-frame">
+    <button class="btn" id="start-btn" onclick="startTimer()">&#9654;&#xFE0E;  Start</button>
+    <button class="btn" id="pause-btn" onclick="pauseTimer()" disabled>&#9208;&#xFE0E;  Pause</button>
+    <button class="btn" id="reset-btn" onclick="resetTimer()">&#8634;  Reset</button>
+  </div>
+</div>
+
+<script>
+  let mode      = 'countdown';
+  let running   = false;
+  let remaining = 0;
+  let startTime = 0;
+  let intervalId = null;
+
+  const timeLabel    = document.getElementById('time-label');
+  const statusLabel  = document.getElementById('status-label');
+  const inputFrame   = document.getElementById('input-frame');
+  const durationInput= document.getElementById('duration-input');
+  const startBtn     = document.getElementById('start-btn');
+  const pauseBtn     = document.getElementById('pause-btn');
+
+  function setMode(m) {
+    resetTimer();
+    mode = m;
+    document.getElementById('tab-countdown').classList.toggle('active', m === 'countdown');
+    document.getElementById('tab-stopwatch').classList.toggle('active', m === 'stopwatch');
+    if (m === 'stopwatch') {
+      inputFrame.style.display = 'none';
+      timeLabel.style.color = '#a6e3a1';
+    } else {
+      inputFrame.style.display = 'block';
+      timeLabel.style.color = '#89b4fa';
+    }
+  }
+
+  function startTimer() {
+    if (running) return;
+    if (mode === 'countdown') {
+      if (remaining === 0) {
+        remaining = parseDuration();
+        if (remaining === null) return;
+      }
+      running = true;
+      intervalId = setInterval(tickCountdown, 1000);
+    } else {
+      startTime = Date.now() - remaining * 1000;
+      running = true;
+      intervalId = setInterval(tickStopwatch, 100);
+    }
+    startBtn.disabled = true;
+    pauseBtn.disabled = false;
+    statusLabel.style.color = '#a6e3a1';
+    statusLabel.textContent = 'läuft…';
+  }
+
+  function pauseTimer() {
+    if (!running) return;
+    running = false;
+    clearInterval(intervalId);
+    startBtn.disabled = false;
+    pauseBtn.disabled = true;
+    statusLabel.style.color = '#f9e2af';
+    statusLabel.textContent = 'pausiert';
+  }
+
+  function resetTimer() {
+    running = false;
+    clearInterval(intervalId);
+    remaining = 0;
+    timeLabel.style.color = mode === 'stopwatch' ? '#a6e3a1' : '#89b4fa';
+    timeLabel.textContent = '00:00:00';
+    startBtn.disabled = false;
+    pauseBtn.disabled = true;
+    statusLabel.textContent = '';
+  }
+
+  function tickCountdown() {
+    timeLabel.textContent = fmt(remaining);
+    if (remaining <= 0) {
+      running = false;
+      clearInterval(intervalId);
+      timeLabel.style.color = '#f38ba8';
+      timeLabel.textContent = '00:00:00';
+      statusLabel.style.color = '#f38ba8';
+      statusLabel.textContent = 'Zeit abgelaufen! \u23F0';
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+      flash(6);
+      return;
+    }
+    remaining--;
+  }
+
+  function tickStopwatch() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    remaining = elapsed;
+    timeLabel.textContent = fmt(elapsed);
+  }
+
+  function flash(n) {
+    if (n <= 0) { timeLabel.style.color = '#f38ba8'; return; }
+    timeLabel.style.color = (n % 2 === 0) ? '#f38ba8' : '#1e1e2e';
+    setTimeout(() => flash(n - 1), 400);
+  }
+
+  function parseDuration() {
+    const raw = durationInput.value.trim();
+    try {
+      if (raw.includes(':')) {
+        const parts = raw.split(':').map(Number);
+        if (parts.some(isNaN)) throw new Error();
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      }
+      const n = parseInt(raw, 10);
+      if (isNaN(n)) throw new Error();
+      return n;
+    } catch {
+      statusLabel.style.color = '#f38ba8';
+      statusLabel.textContent = 'Ungültige Eingabe!';
+      return null;
+    }
+  }
+
+  function fmt(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
+  }
+</script>
+</body>
+</html>
