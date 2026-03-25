@@ -6,25 +6,28 @@
   <title>Timer</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; overflow-x: hidden; }
     body {
       background: #1e1e2e;
       color: #cdd6f4;
       font-family: 'Segoe UI', sans-serif;
       display: flex;
       justify-content: center;
-      padding: 40px 20px;
+      padding: 8px;
       min-height: 100vh;
     }
-    .app { width: 440px; }
+    .app {
+      width: min(100%, 440px);
+    }
 
     /* Tabs */
-    .tab-frame { display: flex; gap: 6px; margin-bottom: 10px; }
+    .tab-frame { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
     .tab-btn {
       background: #1e1e2e;
       color: #cdd6f4;
       border: none;
       border-radius: 4px;
-      padding: 6px 14px;
+      padding: 6px 12px;
       font-size: 11pt;
       font-family: 'Segoe UI', sans-serif;
       cursor: pointer;
@@ -35,13 +38,13 @@
     .display {
       background: #313244;
       border-radius: 6px;
-      padding: 20px 30px;
+      padding: clamp(12px, 4vw, 20px) clamp(12px, 5vw, 30px);
       text-align: center;
       margin-bottom: 10px;
     }
     #time-label {
       font-family: 'Courier New', monospace;
-      font-size: 64px;
+      font-size: clamp(36px, 14vw, 64px);
       font-weight: bold;
       color: #89b4fa;
       line-height: 1;
@@ -63,13 +66,13 @@
       border: none;
       padding: 8px;
       font-family: 'Courier New', monospace;
-      font-size: 16px;
+      font-size: clamp(14px, 3.6vw, 16px);
       border-radius: 4px;
       outline: none;
     }
 
     /* Buttons */
-    .btn-frame { display: flex; gap: 8px; }
+    .btn-frame { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn {
       padding: 8px 16px;
       border: none;
@@ -79,11 +82,17 @@
       font-family: 'Segoe UI', sans-serif;
       cursor: pointer;
       color: #1e1e2e;
+      flex: 1 1 120px;
     }
     .btn:disabled { opacity: 0.4; cursor: default; }
     #start-btn { background: #a6e3a1; }
     #pause-btn { background: #f9e2af; }
     #reset-btn { background: #f38ba8; }
+
+    @media (max-width: 360px) {
+      body { padding: 6px; }
+      .btn { flex-basis: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -236,3 +245,4 @@
 </script>
 </body>
 </html>
+
